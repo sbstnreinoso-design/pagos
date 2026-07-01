@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mis Tarjetas · móvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f17; --bg2:#0e1422; --panel:#131b2b; --panel2:#0f1726;
+  --ink:#eef3fb; --ink2:#9fb0c7; --ink3:#67788f; --line:#1f2a3d; --line2:#2c3a52;
+  --accent:#6d8bff; --good:#34d399; --good2:#0b7a57; --warn:#f4b455; --warnbg:#2a2010;
+  --r:18px;
+  --sans:'Inter',system-ui,-apple-system,sans-serif; --disp:'Plus Jakarta Sans',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(900px 500px at 75% -10%, rgba(109,139,255,.12), transparent 60%);}
+.wrap{max-width:680px;margin:0 auto;padding:30px 20px 70px}
+button{font-family:inherit;cursor:pointer}
+.muted{color:var(--ink2)} .faint{color:var(--ink3)}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#6d8bff,#8b5cf6);display:grid;place-items:center;box-shadow:0 6px 18px rgba(109,139,255,.4)}
+.logo svg{width:22px;height:22px;color:#fff}
+.brand h1{font-family:var(--disp);font-size:17px;margin:0;letter-spacing:-.02em}
+.brand p{margin:2px 0 0;font-size:12.5px;color:var(--ink2);text-transform:capitalize}
+.cog{width:38px;height:38px;border-radius:11px;border:1px solid var(--line2);background:var(--panel);color:var(--ink2);display:grid;place-items:center}
+.cog:hover{color:var(--ink)} .cog svg{width:17px;height:17px}
+
+/* Reminder */
+.remind{display:none;align-items:flex-start;gap:12px;background:var(--warnbg);border:1px solid var(--warn);border-radius:14px;padding:14px 16px;margin-bottom:18px}
+.remind.on{display:flex}
+.remind svg{width:20px;height:20px;color:var(--warn);flex:none;margin-top:1px}
+.remind .t{font-size:13.5px;line-height:1.5}
+.remind .t b{color:var(--warn)}
+.remind .x{margin-left:auto;background:none;border:none;color:var(--ink3);font-size:13px;text-decoration:underline;white-space:nowrap}
+
+/* Hero recommendation */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:32px 28px;margin-bottom:14px;
+  background:linear-gradient(140deg,#0f9d6f 0%,#0b7a57 60%,#0a5f6e 100%);box-shadow:0 22px 60px rgba(11,122,87,.4)}
+.hero::after{content:"";position:absolute;right:-50px;top:-50px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.09)}
+.hero .lbl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.92)}
+.hero .lbl svg{width:16px;height:16px}
+.hero .card-name{font-family:var(--disp);font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:14px 0 6px;color:#fff;position:relative;z-index:1}
+.hero .sub{font-size:15px;color:rgba(255,255,255,.95);position:relative;z-index:1}
+.hero .sub b{font-weight:700}
+.hero .chips{display:flex;gap:10px;margin-top:18px;position:relative;z-index:1;flex-wrap:wrap}
+.chip{background:rgba(255,255,255,.16);border-radius:11px;padding:9px 13px}
+.chip .k{font-size:11px;color:rgba(255,255,255,.8)}
+.chip .v{font-size:16px;font-weight:700;font-family:var(--disp)}
+.hero.empty{background:linear-gradient(140deg,#334155,#1e293b);box-shadow:0 18px 50px rgba(0,0,0,.4)}
+
+/* Alternatives */
+.alt-title{font-size:12px;font-weight:600;color:var(--ink3);letter-spacing:.04em;text-transform:uppercase;margin:22px 4px 10px}
+.alt{display:flex;flex-direction:column;gap:8px}
+.arow{display:flex;align-items:center;gap:13px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+.arow .rank{font-family:var(--disp);font-size:13px;font-weight:700;color:var(--ink3);width:18px;text-align:center}
+.arow .bar{width:6px;height:30px;border-radius:4px;flex:none}
+.arow .nm{flex:1;min-width:0}
+.arow .nm b{font-size:15px;font-weight:600;display:block}
+.arow .nm span{font-size:12px;color:var(--ink3)}
+.arow .days{text-align:right}
+.arow .days .d{font-size:17px;font-weight:700;font-family:var(--disp)}
+.arow .days .l{font-size:10.5px;color:var(--ink3)}
+.arow.pending{opacity:.6}
+.arow.pending .days .d{font-size:13px;color:var(--warn)}
+
+/* Pagos */
+.sec2{display:flex;align-items:center;justify-content:space-between;margin:30px 4px 12px}
+.sec2 h2{font-family:var(--disp);font-size:16px;margin:0;letter-spacing:-.01em}
+.totbadge{font-family:var(--disp);font-size:13px;font-weight:700;color:var(--warn);background:var(--warnbg);border:1px solid var(--warn);border-radius:9px;padding:2px 10px;margin-left:8px;vertical-align:middle;white-space:nowrap}
+.totbadge:empty{display:none}
+.pagos{display:flex;flex-direction:column;gap:8px}
+.pago{display:flex;align-items:center;gap:13px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+.pago.vencido{border-color:#ef4444;background:rgba(239,68,68,.06)}
+.pago .dot{width:6px;height:34px;border-radius:4px;flex:none}
+.pago .info{flex:1;min-width:0}
+.pago .info b{font-size:15px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.autotag{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:middle}
+.pago .info span{font-size:12px;color:var(--ink3)}
+.pago .info .pdatos{display:block;margin-top:4px;font-size:12px;color:var(--ink2);user-select:all;line-height:1.45;white-space:normal}
+.pago .info .campos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.copychip{display:inline-flex;align-items:center;gap:7px;background:var(--bg2);border:1px solid var(--line2);border-radius:9px;padding:5px 9px;cursor:pointer;transition:.12s;font-family:var(--sans)}
+.copychip:hover{border-color:var(--accent);background:var(--panel)}
+.copychip:active{transform:scale(.97)}
+.copychip .ck{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em}
+.copychip .cv{font-size:12.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.copychip svg{width:13px;height:13px;color:var(--ink3);flex:none}
+.copychip:hover svg{color:var(--accent)}
+.pago .amt{font-family:var(--disp);font-size:15px;font-weight:700;text-align:right;white-space:nowrap}
+.pago .when{font-size:11px;font-weight:600;padding:4px 9px;border-radius:8px;white-space:nowrap}
+.pago .pacts{display:flex;gap:3px}
+.pago .pacts button{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink3)}
+.pago .pacts button:hover{color:var(--ink);border-color:var(--line2)} .pago .pacts svg{width:14px;height:14px}
+.pago .pacts .paidbtn{color:#34d399;border-color:rgba(52,211,153,.45)}
+.pago .pacts .paidbtn:hover{color:#0b0f17;background:#34d399;border-color:#34d399}
+.pago-empty{text-align:center;color:var(--ink3);font-size:13px;padding:18px}
+.hist{flex-direction:column;gap:6px}
+.histrow{display:flex;align-items:center;gap:11px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.histrow .hchk{width:17px;height:17px;flex:none}
+.histrow .hbar{width:5px;height:26px;border-radius:4px;flex:none}
+.histrow .hinfo{flex:1;min-width:0}
+.histrow .hinfo b{font-size:14px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.histrow .hinfo span{font-size:11.5px;color:var(--ink3)}
+.histrow .hamt{font-family:var(--disp);font-size:14px;font-weight:700;color:var(--ink2);white-space:nowrap}
+.histrow .hdel{width:26px;height:26px;display:grid;place-items:center;border-radius:7px;border:1px solid var(--line);background:none;color:var(--ink3);flex:none}
+.histrow .hdel:hover{color:#f87171;border-color:var(--line2)} .histrow .hdel svg{width:13px;height:13px}
+.pagoform{background:var(--panel2);border:1px solid var(--line2);border-radius:14px;padding:14px;margin-bottom:10px;display:none;grid-template-columns:1fr 1fr;gap:10px}
+.pagoform.on{display:grid}
+.pagoform .ff{display:flex;flex-direction:column;gap:5px}
+.pagoform .ff.full{grid-column:1/-1}
+.pagoform label{font-size:11.5px;color:var(--ink2);font-weight:500}
+.pagoform input{font-family:inherit;font-size:14px;padding:9px 11px;border-radius:9px;border:1px solid var(--line2);background:var(--bg2);color:var(--ink);width:100%}
+.pagoform input:focus{outline:none;border-color:var(--accent)}
+.pagoform .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2)}
+.pagoform .row{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:2px}
+.pagoform .row button{font-size:13px;font-weight:500;padding:9px 15px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--ink)}
+.pagoform .row .prim{background:linear-gradient(135deg,#6d8bff,#8b5cf6);border:none;color:#fff}
+.impbtn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--ink2);background:none;border:none;text-decoration:underline}
+.impbtn:hover{color:var(--ink)} .impbtn svg{width:14px;height:14px}
+
+/* Dates editor */
+.sheet{margin-top:26px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:6px 4px}
+.sheet h3{font-family:var(--disp);font-size:14px;margin:14px 16px 4px}
+.sheet .hint{font-size:12px;color:var(--ink3);margin:0 16px 12px}
+.drow{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:11px 16px;border-top:1px solid var(--line)}
+.drow .dn{display:flex;align-items:center;gap:10px;min-width:0}
+.drow .dn .dot{width:9px;height:26px;border-radius:4px;flex:none}
+.drow .dn .dotbtn{width:14px;height:26px;border-radius:5px;flex:none;border:none;padding:0;cursor:pointer;position:relative}
+.drow .dn .dotbtn::after{content:"";position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;background:var(--panel2);border:1px solid var(--line2)}
+.palette{grid-column:1/-1;display:none;gap:7px;flex-wrap:wrap;align-items:center;padding:12px 2px 6px}
+.palette.on{display:flex}
+.palette .sw{width:24px;height:24px;border-radius:7px;border:2px solid transparent;cursor:pointer}
+.palette .sw:hover{transform:scale(1.12)}
+.palette .sw.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg)}
+.palette .sep{width:1px;align-self:stretch;background:var(--line2);margin:0 2px}
+.palette .cpick{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:none;padding:0;cursor:pointer}
+.palette .cpick::-webkit-color-swatch-wrapper{padding:2px}
+.palette .cpick::-webkit-color-swatch{border:none;border-radius:7px}
+.palette .gotero{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:var(--panel);color:var(--ink2);display:grid;place-items:center;cursor:pointer}
+.palette .gotero:hover{color:var(--ink);border-color:var(--accent)}
+.palette .gotero svg{width:16px;height:16px}
+.drow .dn b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow .fl{display:flex;flex-direction:column;align-items:center;gap:3px}
+.drow .fl label{font-size:10px;color:var(--ink3)}
+.drow input{width:54px;text-align:center;font-family:inherit;font-size:15px;font-weight:600;padding:7px 4px;border-radius:9px;border:1px solid var(--line2);background:var(--bg2);color:var(--ink)}
+.drow input:focus{outline:none;border-color:var(--accent)}
+.drow .del{background:none;border:none;color:var(--ink3);width:26px;height:26px;border-radius:7px}
+.drow .del:hover{color:#f87171;background:rgba(248,113,113,.1)}
+.drow .del svg{width:15px;height:15px}
+.addrow{display:flex;justify-content:center;padding:12px}
+.addbtn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--ink2);background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:9px 15px}
+.addbtn:hover{color:var(--ink);border-color:var(--accent)} .addbtn svg{width:15px;height:15px}
+.foot{margin-top:20px;font-size:11.5px;color:var(--ink3);text-align:center;line-height:1.6}
+.swcol{display:flex;gap:6px;margin:0 16px 12px}
+.swcol button{width:24px;height:24px;border-radius:7px;border:2px solid transparent}
+.swcol button.sel{border-color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div>
+      <div><h1>¿Qué tarjeta uso hoy?</h1><p id="today">—</p></div>
+    </div>
+    <button class="cog" id="toggleEdit" title="Editar fechas de corte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
+  </div>
+
+  <div class="remind" id="remind">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    <div class="t" id="remindTxt"></div>
+    <button class="x" id="remindX">ocultar</button>
+  </div>
+
+  <div id="hero"></div>
+
+  <div class="alt-title" id="altTitle" style="display:none">Si esa no, la siguiente</div>
+  <div class="alt" id="alt"></div>
+
+  <div class="sec2"><h2>Pagos pendientes <span class="totbadge" id="pagosTotal"></span></h2><button class="addbtn" id="togglePago"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar</button></div>
+  <div class="pagoform" id="pagoform">
+    <div class="ff full"><label>Concepto</label><input id="pf_con" placeholder="Ej: Pago Amex, arriendo, Netflix…"></div>
+    <div class="ff"><label>Monto (COP) · opcional</label><input id="pf_amt" type="number" inputmode="numeric" placeholder="150000"></div>
+    <div class="ff"><label>Día límite de pago (1–31)</label><input id="pf_dia" type="number" min="1" max="31" placeholder="16"></div>
+    <div class="ff full"><label class="chk"><input type="checkbox" id="pf_mens" checked style="width:auto"> Se repite cada mes</label></div>
+    <div class="row"><button id="pf_cancel">Cancelar</button><button class="prim" id="pf_save">Guardar</button></div>
+  </div>
+  <div class="pagos" id="pagos"></div>
+  <div style="text-align:center;margin-top:10px"><button class="impbtn" id="importPagos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16v4H4zM4 12h10M4 17h7"/></svg>Traer pagos desde mi correo (pídemelo en el chat)</button></div>
+
+  <div class="sec2" style="margin-top:28px"><h2>Pagos realizados</h2><button class="addbtn" id="toggleHist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>Ver historial</button></div>
+  <div class="hist" id="hist" style="display:none"></div>
+
+  <div class="sheet" id="sheet" style="display:none">
+    <h3>Fechas de corte y pago</h3>
+    <p class="hint">Actualízalas el 1 y el 15 con tus pantallazos. La de corte es la que cambia cada mes.</p>
+    <div id="drows"></div>
+    <div class="addrow"><button class="addbtn" id="addCard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar tarjeta</button></div>
+  </div>
+
+  <div class="foot">Te recomiendo la tarjeta cuyo <b>corte está más lejos hoy</b>: la compra cae en el próximo ciclo y se paga lo más tarde posible.<br>Sin saldos ni cupos — solo fechas.</div>
+
+</div>
+
+<script>window.PUBLIC_VIEW=true;</script>
+<script>
+const KEY="qtarjeta_v1";
+/* Modo público (versión para el celular/hosting): enmascara identificadores sensibles.
+   La versión local NO define window.PUBLIC_VIEW, así que muestra todo. */
+const PUBLIC = !!window.PUBLIC_VIEW;
+function maskNum(s){ return String(s==null?'':s).replace(/\d{5,}/g, m=>'••'+m.slice(-4)); }
+function pub(s){ return PUBLIC ? maskNum(s) : s; }
+const COLORS=["#006fcf","#ff5a3c","#d8402f","#34d399","#f4b455","#a78bfa","#22d3ee","#f472b6"];
+function hsl2hex(h,s,l){s/=100;l/=100;const a=s*Math.min(l,1-l);const k=n=>(n+h/30)%12;const f=n=>{const c=l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));return Math.round(255*c).toString(16).padStart(2,'0');};return '#'+f(0)+f(8)+f(4);}
+const ALLCOLORS=(()=>{const out=[];const hues=[0,18,35,50,65,90,120,150,175,195,215,240,265,290,315,335];
+  for(const l of [72,58,44]) for(const h of hues) out.push(hsl2hex(h,78,l));
+  ['#ffffff','#d4dbe6','#94a3b8','#5f6b7d','#334155','#0b0f17'].forEach(g=>out.push(g));
+  return out;})();
+function hexToRgb(h){h=String(h).replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');return [parseInt(h.slice(0,2),16)||0,parseInt(h.slice(2,4),16)||0,parseInt(h.slice(4,6),16)||0];}
+function hexToHsl(hex){let [r,g,b]=hexToRgb(hex).map(v=>v/255);const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0,l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=(mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4)*60;}return [h,s*100,l*100];}
+// devuelve un degradado oscuro basado en el color de la tarjeta (texto blanco siempre legible)
+function heroBg(hex){const [h,s]=hexToHsl(hex);const sat=Math.max(s,22);return `linear-gradient(140deg, ${hsl2hex(h,sat,40)} 0%, ${hsl2hex(h,sat,26)} 62%, ${hsl2hex((h+12)%360,sat,22)} 100%)`;}
+let cards=load(), editMode=false;
+
+function load(){
+  try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){}
+  return [
+    {id:"amex",  nombre:"Amex Platinum", corte:31, pago:16, color:"#006fcf"},
+    {id:"rappi", nombre:"RappiCard",     corte:10, pago:20, color:"#ff5a3c"},
+    {id:"davi",  nombre:"Davivienda",    corte:null, pago:null, color:"#d8402f"}
+  ];
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(cards)); render();}
+
+function setCardColor(id,col){
+  const c=cards.find(x=>x.id===id); if(!c) return;
+  c.color=col; save();
+  const rows=cards.map(x=>({c:x,m:compute(x)}));
+  const ranked=rows.filter(r=>r.m.ok).sort((a,b)=>(b.m.nextCut-a.m.nextCut)||(b.m.diff-a.m.diff));
+  if(ranked[0] && ranked[0].c.id===id){ window.scrollTo({top:0,behavior:'smooth'}); }
+  else{ toast('Color guardado. Aparecerá en "Usa hoy" el día que toque usar '+c.nombre+'.'); }
+}
+let toastT;
+function toast(msg){
+  let el=document.getElementById('toast');
+  if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el);
+    el.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#131b2b;border:1px solid #2c3a52;color:#eef3fb;padding:11px 16px;border-radius:12px;font-size:13px;max-width:90%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:100;opacity:0;transition:opacity .25s';}
+  el.textContent=msg; el.style.opacity='1'; clearTimeout(toastT); toastT=setTimeout(()=>{el.style.opacity='0';},2800);
+}
+function copyText(t){
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(t).then(()=>toast('Copiado: '+t)).catch(()=>fallbackCopy(t)); }
+  else fallbackCopy(t);
+}
+function fallbackCopy(t){
+  const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.top='-1000px'; document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); toast('Copiado: '+t); }catch(e){ toast('Cópialo manual: '+t); }
+  document.body.removeChild(ta);
+}
+
+/* fechas */
+function today(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function clampDay(y,m,d){return Math.min(d,new Date(y,m+1,0).getDate());}
+function nextDay(from,day,strict){let y=from.getFullYear(),m=from.getMonth();for(let i=0;i<13;i++){const c=new Date(y,m,clampDay(y,m,day));if(strict?c>from:c>=from)return c;m++;if(m>11){m=0;y++;}}return from;}
+function daysBetween(a,b){return Math.round((b-a)/86400000);}
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function flong(d){const D=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];return D[d.getDay()]+', '+d.getDate()+' de '+MESES[d.getMonth()];}
+function fday(d){return d.getDate()+' '+MS[d.getMonth()];}
+function fpay(d){return d.getDate()+' de '+MESES[d.getMonth()];}
+
+function compute(c){
+  if(!c.corte||!c.pago) return {ok:false};
+  const t=today();
+  // El corte que FACTURA la compra de hoy = el primer corte en o después de hoy (no estricto).
+  // Así, una tarjeta que corta HOY factura hoy (plazo corto) y gana la que ya cortó.
+  const billCut=nextDay(t,c.corte,false);
+  const payDate=nextDay(billCut,c.pago,true);
+  const diff=daysBetween(t,payDate);
+  const cortaHoy=billCut.getTime()===t.getTime();
+  return {ok:true,nextCut:billCut,payDate,diff,cortaHoy};
+}
+
+function render(){
+  document.getElementById('today').textContent=flong(today());
+  const rows=cards.map(c=>({c,m:compute(c)}));
+  // ordena por la fecha de corte MÁS LEJANA primero (más plazo); desempata por días de plazo
+  const ranked=rows.filter(r=>r.m.ok).sort((a,b)=> (b.m.nextCut-a.m.nextCut) || (b.m.diff-a.m.diff));
+  const pending=rows.filter(r=>!r.m.ok);
+
+  // hero
+  const h=document.getElementById('hero');
+  if(!ranked.length){
+    h.innerHTML=`<div class="hero empty"><div class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4"/></svg>Faltan fechas</div>
+      <div class="card-name">Agrega tus cortes</div>
+      <div class="sub">Pon la fecha de corte y de pago de al menos una tarjeta (toca el engranaje).</div></div>`;
+  }else{
+    const b=ranked[0];
+    const warn=b.m.cortaHoy?`<div class="sub" style="margin-top:8px;background:rgba(0,0,0,.18);border-radius:10px;padding:8px 11px;font-size:13px">⚠ Esta tarjeta <b>corta hoy</b>: el plazo puede ser corto. Si puedes, úsala mañana o revisa la siguiente opción.</div>`:'';
+    h.innerHTML=`<div class="hero" style="background:${heroBg(b.c.color)};box-shadow:0 20px 55px rgba(0,0,0,.45)"><div class="lbl"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 6.9H22l-6 4.3 2.3 7L12 16.9 5.7 20.2 8 13.2l-6-4.3h7.6z"/></svg>Usa hoy</div>
+      <div class="card-name">${esc(b.c.nombre)}</div>
+      <div class="sub">Pagarías hasta el <b>${fpay(b.m.payDate)}</b></div>
+      <div class="chips">
+        <div class="chip"><div class="k">Plazo</div><div class="v">${b.m.diff} días</div></div>
+        <div class="chip"><div class="k">Fecha de corte</div><div class="v">${fday(b.m.nextCut)}</div></div>
+      </div>${warn}</div>`;
+  }
+
+  // alternativas
+  const alt=document.getElementById('alt');
+  const altT=document.getElementById('altTitle');
+  const rest=ranked.slice(1);
+  if(rest.length||pending.length){
+    altT.style.display='block';
+    alt.innerHTML=rest.map((r,i)=>`<div class="arow"><span class="rank">${i+2}</span><span class="bar" style="background:${r.c.color}"></span>
+      <span class="nm"><b>${esc(r.c.nombre)}${r.m.cortaHoy?' <span style="font-size:10.5px;font-weight:600;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:1px 6px;margin-left:4px">corta hoy</span>':''}</b><span>corte ${r.c.corte} · pago ${r.c.pago}</span></span>
+      <span class="days"><div class="d">${r.m.diff}</div><div class="l">días</div></span></div>`).join('')
+      + pending.map(r=>`<div class="arow pending"><span class="rank">—</span><span class="bar" style="background:${r.c.color}"></span>
+      <span class="nm"><b>${esc(r.c.nombre)}</b><span>falta fecha de corte/pago</span></span>
+      <span class="days"><div class="d">pendiente</div></span></div>`).join('');
+  }else{altT.style.display='none';alt.innerHTML='';}
+
+  // editor
+  const dr=document.getElementById('drows');
+  dr.innerHTML=cards.map(c=>`<div class="drow">
+    <div class="dn"><button class="dotbtn" style="background:${c.color}" data-pal="${c.id}" title="Cambiar color"></button><b>${esc(c.nombre)}</b></div>
+    <div class="fl"><label>Corte</label><input type="number" min="1" max="31" value="${c.corte??''}" data-id="${c.id}" data-f="corte"></div>
+    <div class="fl"><label>Pago</label><input type="number" min="1" max="31" value="${c.pago??''}" data-id="${c.id}" data-f="pago"></div>
+    <button class="del" data-id="${c.id}" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
+    <div class="palette" data-palrow="${c.id}">${ALLCOLORS.map(col=>`<button class="sw ${col.toLowerCase()===String(c.color).toLowerCase()?'sel':''}" style="background:${col}" data-cid="${c.id}" data-col="${col}"></button>`).join('')}<span class="sep"></span><input type="color" class="cpick" data-cid="${c.id}" value="${/^#[0-9a-fA-F]{6}$/.test(c.color)?c.color:'#6d8bff'}" title="Color personalizado"><button class="gotero" data-cid="${c.id}" title="Cuentagotas (tomar color de la pantalla)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg></button></div>
+  </div>`).join('');
+  dr.querySelectorAll('.dotbtn').forEach(b=>b.addEventListener('click',e=>{
+    const pal=dr.querySelector(`.palette[data-palrow="${e.currentTarget.dataset.pal}"]`); pal.classList.toggle('on');
+  }));
+  dr.querySelectorAll('.palette .sw').forEach(b=>b.addEventListener('click',e=>{
+    setCardColor(e.target.dataset.cid, e.target.dataset.col);
+  }));
+  dr.querySelectorAll('.palette .cpick').forEach(inp=>inp.addEventListener('change',e=>{
+    setCardColor(e.target.dataset.cid, e.target.value);
+  }));
+  dr.querySelectorAll('.palette .gotero').forEach(b=>b.addEventListener('click',async e=>{
+    const id=e.currentTarget.dataset.cid;
+    if(window.EyeDropper){ try{ const res=await new EyeDropper().open(); setCardColor(id, res.sRGBHex); }catch(err){} }
+    else{ const inp=dr.querySelector('.palette .cpick[data-cid="'+id+'"]'); if(inp) inp.click(); }
+  }));
+  dr.querySelectorAll('input[data-f]').forEach(inp=>inp.addEventListener('change',e=>{
+    const c=cards.find(x=>x.id===e.target.dataset.id); const v=e.target.value.trim();
+    c[e.target.dataset.f]= v===''?null:Math.max(1,Math.min(31,Number(v))); save();
+  }));
+  dr.querySelectorAll('.del').forEach(b=>b.addEventListener('click',e=>{
+    const id=e.currentTarget.dataset.id; if(confirm('¿Eliminar esta tarjeta?')){cards=cards.filter(x=>x.id!==id); save();}
+  }));
+
+  renderRemind();
+  renderPagos();
+}
+
+/* ===== PAGOS PENDIENTES ===== */
+/* Pagos que agrega Claude (de recibos en la carpeta 'pagos' o del correo).
+   Cada uno lleva 'ref' (origen + fecha) para no duplicar. Claude edita SOLO este bloque. */
+window.PAGOS_SEED = /*PAGOS_START*/[
+  {"id":"p-amex","concepto":"Pago Amex Platinum","monto":13372364,"dia":16,"mensual":true,"color":"#006fcf","ref":"portal Bancolombia 30/06"},
+  {"id":"p-rappi","concepto":"Pago RappiCard (vencido)","monto":15869157,"dia":20,"mensual":true,"color":"#ff5a3c","ref":"app RappiCard 30/06"},
+  {"id":"p-icloud","concepto":"iCloud+ (Apple)","monto":12900,"dia":5,"mensual":true,"auto":true,"color":"#94a3b8","ref":"cargo Apple 05/06"},
+  {"id":"p-yt","concepto":"YouTube Premium","monto":27000,"dia":15,"mensual":true,"auto":true,"color":"#f472b6","ref":"perfil suscripciones (día estimado)"},
+  {"id":"p-dgo","concepto":"DGO / DirectvGo (cancelar tras Mundial)","monto":69900,"dia":20,"mensual":true,"auto":true,"color":"#a78bfa","ref":"perfil suscripciones (día estimado)"},
+  {"id":"p-clh","concepto":"Claude · Anthropic (hija)","monto":344359,"dia":29,"mensual":true,"auto":true,"color":"#34d399","ref":"cargo automático Amex ••0392 · ~US$100 · 29/06"},
+{"id":"r-movistar","concepto":"Movistar móvil (línea 3172869458)","monto":37360,"dia":4,"mensual":true,"venc":"2026-07-04","color":"#019df4","ref":"Slack #pagos + correo Movistar · vence 4 jul","campos":[{"k":"Número pago","v":"60892553941"},{"k":"Factura","v":"BEC532673604"},{"k":"Valor","v":"37360"}]}
+]/*PAGOS_END*/;
+/* Historial de pagos que Claude registra (ya pagados). Se mezcla con lo que marques en la web. */
+window.HIST_SEED = /*HIST_START*/[
+  {"concepto":"Luz · ENERCA (apto Deck 29)","monto":528290,"pagadoEl":"2026-07-01","color":"#f4b455"},
+  {"concepto":"Agua · Acueducto Yopal EAAAY","monto":61640,"pagadoEl":"2026-07-01","color":"#38bdf8"},
+  {"concepto":"Gas · Cusianagas","monto":11349,"pagadoEl":"2026-07-01","color":"#fb923c"},
+  {"concepto":"Administración edificio","monto":737192,"pagadoEl":"2026-07-01","color":"#22d3ee"},
+  {"concepto":"Adobe Creative Cloud","monto":49370,"pagadoEl":"2026-07-01","color":"#d8402f"}
+]/*HIST_END*/;
+const PKEY="qpagos_v1";
+let pagos=loadPagos();
+function loadPagos(){
+  const seed=(window.PAGOS_SEED||[]).map(p=>({...p}));
+  let stored=null; try{stored=JSON.parse(localStorage.getItem(PKEY));}catch(e){}
+  let removed=[]; try{removed=JSON.parse(localStorage.getItem(PKEY+'_rm'))||[];}catch(e){}
+  if(!stored) return seed.filter(s=>!removed.includes(s.id));
+  const ids=new Set(stored.map(p=>p.id));
+  seed.forEach(s=>{ if(!ids.has(s.id) && !removed.includes(s.id)) stored.push(s); }); // agrega nuevos de Claude sin duplicar
+  return stored;
+}
+function savePagos(){localStorage.setItem(PKEY,JSON.stringify(pagos)); renderPagos();}
+function removePago(id){
+  pagos=pagos.filter(x=>x.id!==id);
+  try{let rm=JSON.parse(localStorage.getItem(PKEY+'_rm'))||[]; if(!rm.includes(id)){rm.push(id); localStorage.setItem(PKEY+'_rm',JSON.stringify(rm));}}catch(e){}
+  savePagos();
+}
+
+function loadPaid(){try{return JSON.parse(localStorage.getItem('qpagos_paid'))||{};}catch(e){return {};}}
+function markPaid(id){
+  const p=pagos.find(x=>x.id===id); if(!p) return;
+  logPaid(p);
+  if(!p.mensual){ removePago(id); renderHist(); toast('Pago realizado. Lo quité de pendientes.'); return; }
+  if(p.venc){ delete p.venc; localStorage.setItem(PKEY,JSON.stringify(pagos)); } // recibo pagado; el próximo mes usa el día recurrente
+  const due=nextDay(today(),p.dia,false); const paid=loadPaid(); paid[id]=due.toISOString().slice(0,10);
+  localStorage.setItem('qpagos_paid',JSON.stringify(paid)); renderPagos(); renderHist(); toast('Marcado como pagado ✓ · vuelve el próximo mes.');
+}
+/* ===== HISTORIAL DE PAGOS (para no pagar 2 veces) ===== */
+const HKEY='qpagos_hist';
+function loadHist(){
+  let user=[]; try{user=JSON.parse(localStorage.getItem(HKEY))||[];}catch(e){}
+  const seen=new Set(user.map(r=>r.concepto+'|'+r.pagadoEl));
+  (window.HIST_SEED||[]).forEach(s=>{ if(!seen.has(s.concepto+'|'+s.pagadoEl)) user.push(s); });
+  return user.sort((a,b)=> (b.pagadoEl||'').localeCompare(a.pagadoEl||''));
+}
+function logPaid(p){
+  const h=loadHist(); const t=today();
+  h.unshift({concepto:p.concepto, monto:(p.monto??null), pagadoEl:t.toISOString().slice(0,10), color:(p.color||'#6d8bff')});
+  localStorage.setItem(HKEY, JSON.stringify(h.slice(0,80)));
+}
+function delHist(i){const h=loadHist(); h.splice(i,1); localStorage.setItem(HKEY,JSON.stringify(h)); renderHist();}
+function renderHist(){
+  const el=document.getElementById('hist'); if(!el) return;
+  const h=loadHist();
+  if(!h.length){el.innerHTML='<div class="pago-empty">Aún no has marcado pagos. Cuando pagues algo con el ✓, queda registrado aquí.</div>'; return;}
+  el.innerHTML=h.map((r,i)=>{
+    const d=new Date(r.pagadoEl+'T00:00:00');
+    return `<div class="histrow"><svg class="hchk" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      <span class="hbar" style="background:${r.color}"></span>
+      <div class="hinfo"><b>${esc(pub(r.concepto))}</b><span>Pagado el ${fpay(d)}</span></div>
+      ${r.monto!=null?`<div class="hamt">$${Number(r.monto).toLocaleString('es-CO')}</div>`:''}
+      <button class="hdel" data-h="${i}" title="Quitar del historial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`;
+  }).join('');
+  el.querySelectorAll('.hdel').forEach(b=>b.onclick=e=>delHist(Number(e.currentTarget.dataset.h)));
+}
+document.getElementById('toggleHist').onclick=()=>{const el=document.getElementById('hist'); el.style.display = el.style.display==='none'?'flex':'none'; if(el.style.display!=='none')renderHist();};
+function renderPagos(){
+  const el=document.getElementById('pagos'); if(!el) return;
+  const t=today(); const paid=loadPaid();
+  let rows=pagos.map(p=>{const due=p.venc?new Date(p.venc+'T00:00:00'):nextDay(t,p.dia,false); return {p,due,d:daysBetween(t,due),key:due.toISOString().slice(0,10)};});
+  rows=rows.filter(r=> paid[r.p.id]!==r.key).sort((a,b)=>a.d-b.d);
+  const total=rows.reduce((s,r)=> s+(Number(r.p.monto)||0),0);
+  const tb=document.getElementById('pagosTotal'); if(tb) tb.textContent = total>0 ? 'Debes $'+total.toLocaleString('es-CO') : '';
+  if(!pagos.length){el.innerHTML='<div class="pago-empty">No tienes pagos pendientes. Agrégalos o mándalos al canal #pagos de Slack.</div>'; return;}
+  if(!rows.length){el.innerHTML='<div class="pago-empty">✓ Todo al día. No tienes pagos pendientes este ciclo.</div>'; return;}
+  el.innerHTML=rows.map(({p,due,d})=>{
+    const col = d<0?'#ef4444' : d<=3?'#f87171' : d<=7?'#f4b455' : '#34d399';
+    const lbl = d<0?('Vencido'+(d===-1?' (ayer)':' (hace '+(-d)+' días)')) : d===0?'Hoy' : d===1?'Mañana' : 'En '+d+' días';
+    return `<div class="pago${d<0?' vencido':''}"><span class="dot" style="background:${p.color||'#6d8bff'}"></span>
+      <div class="info"><b>${esc(pub(p.concepto))}${p.auto?' <span class="autotag">auto</span>':''}</b><span>${p.mensual?'cada mes':'una vez'} · día ${p.dia} · ${fpay(due)}${p.ref?' · <span class="faint">'+esc(p.ref)+'</span>':''}</span>${(p.campos&&p.campos.length)?`<div class="campos">${p.campos.map(c=>`<button class="copychip" data-copy="${esc(pub(c.v))}" title="Copiar ${esc(c.k)}"><span class="ck">${esc(c.k)}</span><span class="cv">${esc(pub(c.v))}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>`).join('')}</div>`:(p.datos?`<span class="pdatos">🧾 ${esc(p.datos)}</span>`:'')}</div>
+      ${p.monto!=null?`<div class="amt">$${Number(p.monto).toLocaleString('es-CO')}</div>`:''}
+      <span class="when" style="background:rgba(0,0,0,.28);color:${col};border:1px solid ${col}">${lbl}</span>
+      <div class="pacts"><button class="paidbtn" data-paid="${p.id}" title="Marcar como pagado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+      <button data-ed="${p.id}" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+      <button data-del="${p.id}" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button></div></div>`;
+  }).join('');
+  el.querySelectorAll('.copychip').forEach(b=>b.onclick=()=>copyText(b.dataset.copy));
+  el.querySelectorAll('[data-paid]').forEach(b=>b.onclick=e=>markPaid(e.currentTarget.dataset.paid));
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{const id=e.currentTarget.dataset.del; if(confirm('¿Eliminar este pago de la lista?')){removePago(id);}});
+  el.querySelectorAll('[data-ed]').forEach(b=>b.onclick=e=>openPagoForm(e.currentTarget.dataset.ed));
+}
+
+let editingPago=null;
+function openPagoForm(id){
+  const f=document.getElementById('pagoform'); editingPago=id||null;
+  const p=id?pagos.find(x=>x.id===id):null;
+  document.getElementById('pf_con').value=p?p.concepto:'';
+  document.getElementById('pf_amt').value=p&&p.monto!=null?p.monto:'';
+  document.getElementById('pf_dia').value=p?p.dia:'';
+  document.getElementById('pf_mens').checked=p?!!p.mensual:true;
+  f.classList.add('on'); f.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function closePagoForm(){document.getElementById('pagoform').classList.remove('on'); editingPago=null;}
+function savePagoForm(){
+  const con=document.getElementById('pf_con').value.trim();
+  const dia=Number(document.getElementById('pf_dia').value);
+  if(!con||!dia){document.getElementById('pf_con').focus(); return;}
+  const amtv=document.getElementById('pf_amt').value.trim();
+  const data={concepto:con, monto:amtv===''?null:Number(amtv), dia:Math.max(1,Math.min(31,dia)), mensual:document.getElementById('pf_mens').checked};
+  if(editingPago){Object.assign(pagos.find(x=>x.id===editingPago),data);}
+  else{pagos.push({id:'p'+Date.now(), color:COLORS[pagos.length%COLORS.length], ...data});}
+  closePagoForm(); savePagos();
+}
+document.getElementById('togglePago').onclick=()=>{const f=document.getElementById('pagoform'); if(f.classList.contains('on'))closePagoForm(); else openPagoForm(null);};
+document.getElementById('pf_cancel').onclick=closePagoForm;
+document.getElementById('pf_save').onclick=savePagoForm;
+document.getElementById('importPagos').onclick=()=>toast('Pídemelo en el chat: “trae mis pagos del correo” y los agrego aquí.');
+
+function renderRemind(){
+  const r=document.getElementById('remind');
+  const d=new Date().getDate();
+  const period = d<15 ? 'p1' : 'p2';
+  const key='qtarjeta_remind_'+new Date().getFullYear()+'_'+(new Date().getMonth())+'_'+period;
+  const due = (d===1||d===2||d===15||d===16);
+  const dismissed = localStorage.getItem(key)==='1';
+  if(due && !dismissed){
+    document.getElementById('remindTxt').innerHTML=`<b>Es ${d<=2?'inicio':'mitad'} de mes.</b> Mándame los pantallazos de la <b>fecha de corte</b> de cada tarjeta (Amex, RappiCard, Davivienda) para mantener al día qué tarjeta usar.`;
+    r.classList.add('on');
+    document.getElementById('remindX').onclick=()=>{localStorage.setItem(key,'1'); r.classList.remove('on');};
+  }else{r.classList.remove('on');}
+}
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+document.getElementById('toggleEdit').onclick=()=>{
+  editMode=!editMode;
+  document.getElementById('sheet').style.display=editMode?'block':'none';
+  if(editMode)document.getElementById('sheet').scrollIntoView({behavior:'smooth'});
+};
+document.getElementById('addCard').onclick=()=>{
+  const nombre=prompt('Nombre de la tarjeta:'); if(!nombre)return;
+  cards.push({id:'c'+Date.now(),nombre,corte:null,pago:null,color:COLORS[cards.length%COLORS.length]});
+  save();
+};
+
+render();
+</script>
+</body>
+</html>
