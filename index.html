@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mis Tarjetas · móvil</title>
+<title>Mis Tarjetas · sincronizada</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root{
   --bg:#0b0f17; --bg2:#0e1422; --panel:#131b2b; --panel2:#0f1726;
@@ -157,12 +158,35 @@ button{font-family:inherit;cursor:pointer}
 .addbtn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--ink2);background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:9px 15px}
 .addbtn:hover{color:var(--ink);border-color:var(--accent)} .addbtn svg{width:15px;height:15px}
 .foot{margin-top:20px;font-size:11.5px;color:var(--ink3);text-align:center;line-height:1.6}
+
+.loginov{position:fixed;inset:0;background:#080b11;display:none;align-items:center;justify-content:center;padding:22px;z-index:500}
+.loginov.on{display:flex}
+.loginbox{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:26px 24px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.loginbox h2{font-family:var(--disp);font-size:20px;margin:0 0 4px}
+.loginbox p{font-size:13px;color:var(--ink3);margin:0 0 18px}
+.loginbox input{width:100%;font-family:inherit;font-size:15px;padding:12px 13px;border-radius:11px;border:1px solid var(--line2);background:var(--bg2);color:var(--ink);margin-bottom:10px}
+.loginbox input:focus{outline:none;border-color:var(--accent)}
+.loginbox button{width:100%;font-family:inherit;font-size:15px;font-weight:600;padding:12px;border-radius:11px;border:none;background:linear-gradient(135deg,#6d8bff,#8b5cf6);color:#fff;cursor:pointer;margin-top:4px}
+.loginbox #lg_err{font-size:12.5px;color:var(--warn);margin-top:12px;min-height:16px}
+.logoutBtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line2);background:var(--panel);color:var(--ink3);display:grid;place-items:center;cursor:pointer}
+.logoutBtn:hover{color:#f87171} .logoutBtn svg{width:17px;height:17px}
 .swcol{display:flex;gap:6px;margin:0 16px 12px}
 .swcol button{width:24px;height:24px;border-radius:7px;border:2px solid transparent}
 .swcol button.sel{border-color:var(--ink)}
 </style>
 </head>
 <body>
+<div class="loginov on" id="login">
+  <div class="loginbox">
+    <div class="logo" style="margin:0 auto 14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div>
+    <h2>Mis Tarjetas</h2>
+    <p>Entra para ver y sincronizar tus pagos en todos tus dispositivos.</p>
+    <input id="lg_email" type="email" placeholder="Correo" autocomplete="username">
+    <input id="lg_pass" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <button id="lg_btn">Entrar</button>
+    <div id="lg_err"></div>
+  </div>
+</div>
 <div class="wrap">
 
   <div class="top">
@@ -170,7 +194,8 @@ button{font-family:inherit;cursor:pointer}
       <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div>
       <div><h1>¿Qué tarjeta uso hoy?</h1><p id="today">—</p></div>
     </div>
-    <button class="cog" id="toggleEdit" title="Editar fechas de corte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
+    <button class="logoutBtn" id="logoutBtn" title="Cerrar sesión"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+      <button class="cog" id="toggleEdit" title="Editar fechas de corte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7a1.6 1.6 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V7a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
   </div>
 
   <div class="remind" id="remind">
@@ -209,7 +234,6 @@ button{font-family:inherit;cursor:pointer}
 
 </div>
 
-<script>window.PUBLIC_VIEW=true;</script>
 <script>
 const KEY="qtarjeta_v1";
 /* Modo público (versión para el celular/hosting): enmascara identificadores sensibles.
@@ -231,11 +255,7 @@ let cards=load(), editMode=false;
 
 function load(){
   try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){}
-  return [
-    {id:"amex",  nombre:"Amex Platinum", corte:31, pago:16, color:"#006fcf"},
-    {id:"rappi", nombre:"RappiCard",     corte:10, pago:20, color:"#ff5a3c"},
-    {id:"davi",  nombre:"Davivienda",    corte:null, pago:null, color:"#d8402f"}
-  ];
+  return [];
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(cards)); render();}
 
@@ -364,25 +384,9 @@ function render(){
 /* ===== PAGOS PENDIENTES ===== */
 /* Pagos que agrega Claude (de recibos en la carpeta 'pagos' o del correo).
    Cada uno lleva 'ref' (origen + fecha) para no duplicar. Claude edita SOLO este bloque. */
-window.PAGOS_SEED = /*PAGOS_START*/[
-  {"id":"p-amex","concepto":"Pago Amex Platinum","monto":13372364,"dia":16,"mensual":true,"color":"#006fcf","ref":"portal Bancolombia 30/06"},
-  {"id":"p-rappi","concepto":"Pago RappiCard (vencido)","monto":15869157,"dia":20,"mensual":true,"color":"#ff5a3c","ref":"app RappiCard 30/06"},
-  {"id":"p-icloud","concepto":"iCloud+ (Apple)","monto":12900,"dia":5,"mensual":true,"auto":true,"color":"#94a3b8","ref":"cargo Apple 05/06"},
-  {"id":"p-yt","concepto":"YouTube Premium","monto":27000,"dia":15,"mensual":true,"auto":true,"color":"#f472b6","ref":"perfil suscripciones (día estimado)"},
-  {"id":"p-dgo","concepto":"DGO / DirectvGo (cancelar tras Mundial)","monto":69900,"dia":20,"mensual":true,"auto":true,"color":"#a78bfa","ref":"perfil suscripciones (día estimado)"},
-  {"id":"p-clh","concepto":"Claude · Anthropic (hija)","monto":344359,"dia":29,"mensual":true,"auto":true,"color":"#34d399","ref":"cargo automático Amex ••0392 · ~US$100 · 29/06"},
-{"id":"r-movistar","concepto":"Movistar móvil (línea 3172869458)","monto":37360,"dia":4,"mensual":true,"venc":"2026-07-04","color":"#019df4","ref":"Slack #pagos + correo Movistar · vence 4 jul","campos":[{"k":"Número pago","v":"60892553941"},{"k":"Factura","v":"BEC532673604"},{"k":"Valor","v":"37360"}]},
-{"id":"p-admin","concepto":"Administración edificio (Deck 29 PH)","monto":663473,"dia":8,"mensual":true,"color":"#0ea5e9","ref":"ePayco · pagar ANTES del día 10 → 10% dto","campos":[{"k":"Con 10% dto (antes del día 10)","v":"663473"},{"k":"Valor pleno (sin dto)","v":"737192"},{"k":"Transacción ref","v":"373880164"}]},
-{"id":"p-adobe","concepto":"Adobe Creative Cloud","monto":49370,"dia":30,"mensual":true,"auto":true,"color":"#ec4899","ref":"correo Adobe/eBanx 30/06 · cargo auto RappiCuenta ••4009"}
-]/*PAGOS_END*/;
+window.PAGOS_SEED = /*PAGOS_START*/[]/*PAGOS_END*/;
 /* Historial de pagos que Claude registra (ya pagados). Se mezcla con lo que marques en la web. */
-window.HIST_SEED = /*HIST_START*/[
-  {"concepto":"Luz · ENERCA (apto Deck 29)","monto":528290,"pagadoEl":"2026-07-01","color":"#f4b455"},
-  {"concepto":"Agua · Acueducto Yopal EAAAY","monto":61640,"pagadoEl":"2026-07-01","color":"#38bdf8"},
-  {"concepto":"Gas · Cusianagas","monto":11349,"pagadoEl":"2026-07-01","color":"#fb923c"},
-  {"concepto":"Administración edificio","monto":737192,"pagadoEl":"2026-07-01","color":"#22d3ee"},
-  {"concepto":"Adobe Creative Cloud","monto":49370,"pagadoEl":"2026-07-01","color":"#d8402f"}
-]/*HIST_END*/;
+window.HIST_SEED = /*HIST_START*/[]/*HIST_END*/;
 const PKEY="qpagos_v1";
 let pagos=loadPagos();
 function loadPagos(){
@@ -519,6 +523,33 @@ document.getElementById('addCard').onclick=()=>{
 };
 
 render();
+
+/* ===== LOGIN + SINCRONIZACIÓN EN VIVO (Supabase) ===== */
+const SB_URL='https://qnesbmevphrkqhvvoskh.supabase.co';
+const SB_KEY='sb_publishable_7qbVdBslkKDe_-0q1KF1NQ_cpoeLFoO';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const SYNC_RE=/^q(tarjeta|pagos)/;
+const CLIENT_ID=Math.random().toString(36).slice(2);
+let applyingRemote=false,pushT=null;
+function snapshot(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(SYNC_RE.test(k))o[k]=localStorage.getItem(k);}return o;}
+function applySnapshot(o){applyingRemote=true;try{const cur=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(SYNC_RE.test(k))cur.push(k);}cur.forEach(k=>_rem(k));Object.keys(o||{}).forEach(k=>{if(SYNC_RE.test(k))_set(k,o[k]);});}finally{applyingRemote=false;}}
+function reloadUI(){try{cards=load();pagos=loadPagos();render();renderPagos();renderHist();}catch(e){}}
+const _set=localStorage.setItem.bind(localStorage);
+const _rem=localStorage.removeItem.bind(localStorage);
+localStorage.setItem=function(k,v){_set(k,v);if(!applyingRemote&&SYNC_RE.test(k))schedulePush();};
+localStorage.removeItem=function(k){_rem(k);if(!applyingRemote&&SYNC_RE.test(k))schedulePush();};
+function schedulePush(){clearTimeout(pushT);pushT=setTimeout(pushNow,700);}
+async function pushNow(){try{await sb.from('state').update({blob:snapshot(),updated_at:new Date().toISOString(),updated_by:CLIENT_ID}).eq('id','main');}catch(e){}}
+async function pull(){try{const {data,error}=await sb.from('state').select('blob').eq('id','main').single();if(error){return;}if(data&&data.blob&&Object.keys(data.blob).length){applySnapshot(data.blob);reloadUI();}else{await pushNow();}}catch(e){}}
+function subscribe(){sb.channel('sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'state',filter:'id=eq.main'},function(p){const nb=p&&p.new&&p.new.blob;const by=p&&p.new&&p.new.updated_by;if(by===CLIENT_ID)return;if(nb){applySnapshot(nb);reloadUI();}}).subscribe();}
+const loginEl=document.getElementById('login');
+async function onAuthed(){loginEl.classList.remove('on');await pull();subscribe();}
+async function doLogin(){const email=(document.getElementById('lg_email').value||'').trim();const pass=document.getElementById('lg_pass').value||'';const err=document.getElementById('lg_err');err.textContent='Entrando…';try{const {error}=await sb.auth.signInWithPassword({email:email,password:pass});if(error){err.textContent='No pude entrar: '+error.message;}else{err.textContent='';onAuthed();}}catch(e){err.textContent='Error: '+e.message;}}
+document.getElementById('lg_btn').onclick=doLogin;
+document.getElementById('lg_pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+var _lo=document.getElementById('logoutBtn');if(_lo)_lo.onclick=async function(){await sb.auth.signOut();location.reload();};
+(async function(){try{const {data:{session}}=await sb.auth.getSession();if(session){onAuthed();}else{loginEl.classList.add('on');}}catch(e){loginEl.classList.add('on');}})();
+
 </script>
 </body>
 </html>
