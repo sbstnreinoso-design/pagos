@@ -159,6 +159,20 @@ button{font-family:inherit;cursor:pointer}
 .addbtn:hover{color:var(--ink);border-color:var(--accent)} .addbtn svg{width:15px;height:15px}
 .foot{margin-top:20px;font-size:11.5px;color:var(--ink3);text-align:center;line-height:1.6}
 
+/* Memoria mensual de actualización */
+.actusum{display:flex;align-items:center;gap:9px;margin:2px 16px 12px;font-size:12.5px;color:var(--ink2)}
+.actusum .bar{flex:1;height:6px;border-radius:4px;background:var(--line);overflow:hidden;min-width:60px}
+.actusum .bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#34d399,#0f9d6f);transition:width .3s}
+.actusum b{color:var(--ink);font-weight:600}
+.dstatus{grid-column:1/-1;display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:2px 0 2px}
+.stpill{font-size:11px;font-weight:700;border-radius:8px;padding:4px 11px;border:1px solid;white-space:nowrap;cursor:pointer;font-family:var(--sans);letter-spacing:.01em;transition:.12s}
+.stpill:active{transform:scale(.97)}
+.stpill.ok{color:var(--good);border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.09)}
+.stpill.ok:hover{background:rgba(52,211,153,.17)}
+.stpill.pend{color:var(--warn);border-color:var(--warn);background:var(--warnbg)}
+.stpill.pend:hover{background:#3a2c12}
+.dstatus .sub{font-size:11px;color:var(--ink3)}
+
 .loginov{position:fixed;inset:0;background:#080b11;display:none;align-items:center;justify-content:center;padding:22px;z-index:500}
 .loginov.on{display:flex}
 .loginbox{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:26px 24px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6)}
@@ -225,7 +239,8 @@ button{font-family:inherit;cursor:pointer}
 
   <div class="sheet" id="sheet" style="display:none">
     <h3>Fechas de corte y pago</h3>
-    <p class="hint">Actualízalas el 1 y el 15 con tus pantallazos. La de corte es la que cambia cada mes.</p>
+    <p class="hint">La de corte cambia cada mes. Cuando la edites (o toques “Ya la actualicé”), la tarjeta queda marcada como al día de este mes.</p>
+    <div class="actusum" id="actuSum"></div>
     <div id="drows"></div>
     <div class="addrow"><button class="addbtn" id="addCard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar tarjeta</button></div>
   </div>
@@ -286,6 +301,13 @@ function fallbackCopy(t){
 
 /* fechas */
 function today(){const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function ym(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function ymNombre(m){const p=(m||ym()).split('-');return MESES[Number(p[1])-1]+' '+p[0];}
+function markCardUpdated(id){
+  const c=cards.find(x=>x.id===id); if(!c) return;
+  c.actu=ym(); c.actuFull=today().toISOString().slice(0,10); save();
+  toast('✓ '+c.nombre+' marcada como actualizada este mes.');
+}
 function clampDay(y,m,d){return Math.min(d,new Date(y,m+1,0).getDate());}
 function nextDay(from,day,strict){let y=from.getFullYear(),m=from.getMonth();for(let i=0;i<13;i++){const c=new Date(y,m,clampDay(y,m,day));if(strict?c>from:c>=from)return c;m++;if(m>11){m=0;y++;}}return from;}
 function daysBetween(a,b){return Math.round((b-a)/86400000);}
@@ -348,13 +370,39 @@ function render(){
 
   // editor
   const dr=document.getElementById('drows');
-  dr.innerHTML=cards.map(c=>`<div class="drow">
+  const mNow=ym();
+  dr.innerHTML=cards.map(c=>{
+    const hasDates=c.corte&&c.pago;
+    const ok=c.actu===mNow;
+    let status;
+    if(!hasDates){
+      status=`<span class="sub">Agrega corte y pago para poder marcarla al día.</span>`;
+    }else if(ok){
+      let cuando='';
+      if(c.actuFull){const ad=new Date(c.actuFull+'T00:00:00'); cuando=`<span class="sub">actualizada el ${ad.getDate()} de ${MESES[ad.getMonth()]}</span>`;}
+      status=`<button class="stpill ok" data-actu="${c.id}" title="Volver a confirmar">✓ Al día · ${MS[new Date(mNow+'-01T00:00:00').getMonth()]}</button>${cuando}`;
+    }else{
+      status=`<button class="stpill pend" data-actu="${c.id}" title="Marcar como actualizada este mes">Ya la actualicé ✓</button><span class="sub">aún no confirmas ${ymNombre(mNow)}</span>`;
+    }
+    return `<div class="drow">
     <div class="dn"><button class="dotbtn" style="background:${c.color}" data-pal="${c.id}" title="Cambiar color"></button><b>${esc(c.nombre)}</b></div>
     <div class="fl"><label>Corte</label><input type="number" min="1" max="31" value="${c.corte??''}" data-id="${c.id}" data-f="corte"></div>
     <div class="fl"><label>Pago</label><input type="number" min="1" max="31" value="${c.pago??''}" data-id="${c.id}" data-f="pago"></div>
     <button class="del" data-id="${c.id}" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>
+    <div class="dstatus">${status}</div>
     <div class="palette" data-palrow="${c.id}">${ALLCOLORS.map(col=>`<button class="sw ${col.toLowerCase()===String(c.color).toLowerCase()?'sel':''}" style="background:${col}" data-cid="${c.id}" data-col="${col}"></button>`).join('')}<span class="sep"></span><input type="color" class="cpick" data-cid="${c.id}" value="${/^#[0-9a-fA-F]{6}$/.test(c.color)?c.color:'#6d8bff'}" title="Color personalizado"><button class="gotero" data-cid="${c.id}" title="Cuentagotas (tomar color de la pantalla)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg></button></div>
-  </div>`).join('');
+  </div>`;}).join('');
+  // resumen mensual
+  const sum=document.getElementById('actuSum');
+  if(sum){
+    const conf=cards.filter(c=>c.corte&&c.pago);
+    const okN=conf.filter(c=>c.actu===mNow).length;
+    if(!conf.length){ sum.innerHTML=''; }
+    else{ const pct=Math.round(okN/conf.length*100);
+      sum.innerHTML=`<span>Este mes (<b>${ymNombre(mNow)}</b>): <b>${okN} de ${conf.length}</b> al día</span><span class="bar"><i style="width:${pct}%"></i></span>`;
+    }
+  }
+  dr.querySelectorAll('.stpill[data-actu]').forEach(b=>b.addEventListener('click',e=>markCardUpdated(e.currentTarget.dataset.actu)));
   dr.querySelectorAll('.dotbtn').forEach(b=>b.addEventListener('click',e=>{
     const pal=dr.querySelector(`.palette[data-palrow="${e.currentTarget.dataset.pal}"]`); pal.classList.toggle('on');
   }));
@@ -371,7 +419,9 @@ function render(){
   }));
   dr.querySelectorAll('input[data-f]').forEach(inp=>inp.addEventListener('change',e=>{
     const c=cards.find(x=>x.id===e.target.dataset.id); const v=e.target.value.trim();
-    c[e.target.dataset.f]= v===''?null:Math.max(1,Math.min(31,Number(v))); save();
+    c[e.target.dataset.f]= v===''?null:Math.max(1,Math.min(31,Number(v)));
+    if(c.corte&&c.pago){ c.actu=ym(); c.actuFull=today().toISOString().slice(0,10); } // editar corte/pago = actualizada este mes
+    save();
   }));
   dr.querySelectorAll('.del').forEach(b=>b.addEventListener('click',e=>{
     const id=e.currentTarget.dataset.id; if(confirm('¿Eliminar esta tarjeta?')){cards=cards.filter(x=>x.id!==id); save();}
@@ -497,13 +547,14 @@ document.getElementById('importPagos').onclick=()=>toast('Pídemelo en el chat: 
 
 function renderRemind(){
   const r=document.getElementById('remind');
-  const d=new Date().getDate();
-  const period = d<15 ? 'p1' : 'p2';
-  const key='qtarjeta_remind_'+new Date().getFullYear()+'_'+(new Date().getMonth())+'_'+period;
-  const due = (d===1||d===2||d===15||d===16);
-  const dismissed = localStorage.getItem(key)==='1';
-  if(due && !dismissed){
-    document.getElementById('remindTxt').innerHTML=`<b>Es ${d<=2?'inicio':'mitad'} de mes.</b> Mándame los pantallazos de la <b>fecha de corte</b> de cada tarjeta (Amex, RappiCard, Davivienda) para mantener al día qué tarjeta usar.`;
+  const m=ym();
+  // tarjetas con fechas cargadas que aún no confirmas este mes
+  const pend=cards.filter(c=>c.corte&&c.pago&&c.actu!==m);
+  const key='qtarjeta_actu_dismiss_'+m; // se olvida solo al cambiar de mes
+  const dismissed=localStorage.getItem(key)==='1';
+  if(pend.length && !dismissed){
+    const names=pend.map(c=>'<b>'+esc(c.nombre)+'</b>').join(', ');
+    document.getElementById('remindTxt').innerHTML=`Aún no confirmas la <b>fecha de corte/pago de ${ymNombre(m)}</b> en: ${names}. Abre el engranaje ⚙ y actualízalas (o toca “Ya la actualicé”) para saber cuál usar.`;
     r.classList.add('on');
     document.getElementById('remindX').onclick=()=>{localStorage.setItem(key,'1'); r.classList.remove('on');};
   }else{r.classList.remove('on');}
