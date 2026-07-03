@@ -589,10 +589,23 @@ const _set=localStorage.setItem.bind(localStorage);
 const _rem=localStorage.removeItem.bind(localStorage);
 localStorage.setItem=function(k,v){_set(k,v);if(!applyingRemote&&SYNC_RE.test(k))schedulePush();};
 localStorage.removeItem=function(k){_rem(k);if(!applyingRemote&&SYNC_RE.test(k))schedulePush();};
-function schedulePush(){clearTimeout(pushT);pushT=setTimeout(pushNow,700);}
-async function pushNow(){try{await sb.from('state').update({blob:snapshot(),updated_at:new Date().toISOString(),updated_by:CLIENT_ID}).eq('id','main');}catch(e){}}
-async function pull(){try{const {data,error}=await sb.from('state').select('blob').eq('id','main').single();if(error){return;}if(data&&data.blob&&Object.keys(data.blob).length){applySnapshot(data.blob);reloadUI();}else{await pushNow();}}catch(e){}}
-function subscribe(){sb.channel('sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'state',filter:'id=eq.main'},function(p){const nb=p&&p.new&&p.new.blob;const by=p&&p.new&&p.new.updated_by;if(by===CLIENT_ID)return;if(nb){applySnapshot(nb);reloadUI();}}).subscribe();}
+/* FIX 03-jul-2026: antes pushNow ignoraba errores (JWT expirado ⇒ 401 silencioso) y pull() pisaba
+   los cambios locales no subidos ⇒ las confirmaciones de corte/pago se perdían. Ahora:
+   - bandera 'qsync_dirty' (no matchea SYNC_RE): marca cambios locales pendientes de subir
+   - pushNow: refresca sesión si expiró, usa fetch keepalive (sobrevive al cerrar la app), verifica éxito
+   - pull/realtime: si hay cambios locales pendientes NUNCA los pisa; primero intenta subirlos
+   - flush al ocultar/cerrar la página + reintento cada 20s + aviso visible si no sincroniza */
+const DIRTY='qsync_dirty';
+function setSyncWarn(bad){let el=document.getElementById('syncwarn');if(bad){if(!el){el=document.createElement('div');el.id='syncwarn';el.style.cssText='position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#7a2e2e;color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;z-index:9999;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5)';el.textContent='⚠️ Cambios sin subir a la nube — toca para reintentar';el.onclick=function(){pushNow();};document.body.appendChild(el);}}else if(el){el.remove();}}
+async function getToken(){try{let s=(await sb.auth.getSession()).data.session;if(s&&s.expires_at&&s.expires_at*1000<Date.now()+60000){const r=await sb.auth.refreshSession();if(r.data&&r.data.session)s=r.data.session;}if(!s){loginEl.classList.add('on');return null;}return s.access_token;}catch(e){return null;}}
+function schedulePush(){_set(DIRTY,'1');clearTimeout(pushT);pushT=setTimeout(pushNow,300);}
+async function pushNow(){clearTimeout(pushT);pushT=null;try{const tok=await getToken();if(!tok){setSyncWarn(true);return false;}const res=await fetch(SB_URL+'/rest/v1/state?id=eq.main',{method:'PATCH',keepalive:true,headers:{apikey:SB_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({blob:snapshot(),updated_at:new Date().toISOString(),updated_by:CLIENT_ID})});if(res.ok){_rem(DIRTY);setSyncWarn(false);return true;}setSyncWarn(true);return false;}catch(e){setSyncWarn(true);return false;}}
+async function pull(){if(localStorage.getItem(DIRTY)){await pushNow();return;}try{const {data,error}=await sb.from('state').select('blob').eq('id','main').single();if(error){return;}if(data&&data.blob&&Object.keys(data.blob).length){applySnapshot(data.blob);reloadUI();}else{await pushNow();}}catch(e){}}
+function subscribe(){sb.channel('sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'state',filter:'id=eq.main'},function(p){const nb=p&&p.new&&p.new.blob;const by=p&&p.new&&p.new.updated_by;if(by===CLIENT_ID)return;if(localStorage.getItem(DIRTY)){pushNow();return;}if(nb){applySnapshot(nb);reloadUI();}}).subscribe();}
+function flushSync(){if(localStorage.getItem(DIRTY))pushNow();}
+window.addEventListener('pagehide',flushSync);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')flushSync();});
+setInterval(function(){if(localStorage.getItem(DIRTY)&&!pushT)pushNow();},20000);
 const loginEl=document.getElementById('login');
 async function onAuthed(){loginEl.classList.remove('on');await pull();subscribe();}
 async function doLogin(){const email=(document.getElementById('lg_email').value||'').trim();const pass=document.getElementById('lg_pass').value||'';const err=document.getElementById('lg_err');err.textContent='Entrando…';try{const {error}=await sb.auth.signInWithPassword({email:email,password:pass});if(error){err.textContent='No pude entrar: '+error.message;}else{err.textContent='';onAuthed();}}catch(e){err.textContent='Error: '+e.message;}}
