@@ -129,6 +129,8 @@ button{font-family:inherit;cursor:pointer}
 .sheet{margin-top:26px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:6px 4px}
 .sheet h3{font-family:var(--disp);font-size:14px;margin:14px 16px 4px}
 .sheet .hint{font-size:12px;color:var(--ink3);margin:0 16px 12px}
+.addbtn.savecloud{border-color:#2f7a4f;color:#4ade80}
+.addbtn.savecloud.saving{opacity:.6;pointer-events:none}
 .drow{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:11px 16px;border-top:1px solid var(--line)}
 .drow .dn{display:flex;align-items:center;gap:10px;min-width:0}
 .drow .dn .dot{width:9px;height:26px;border-radius:4px;flex:none}
@@ -242,7 +244,7 @@ button{font-family:inherit;cursor:pointer}
     <p class="hint">La de corte cambia cada mes. Cuando la edites (o toques “Ya la actualicé”), la tarjeta queda marcada como al día de este mes.</p>
     <div class="actusum" id="actuSum"></div>
     <div id="drows"></div>
-    <div class="addrow"><button class="addbtn" id="addCard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar tarjeta</button></div>
+    <div class="addrow"><button class="addbtn" id="addCard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar tarjeta</button><button class="addbtn savecloud" id="saveCloud"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Guardar</button></div>
   </div>
 
   <div class="foot">Te recomiendo la tarjeta cuyo <b>corte está más lejos hoy</b>: la compra cae en el próximo ciclo y se paga lo más tarde posible.<br>Sin saldos ni cupos — solo fechas.</div>
@@ -576,6 +578,14 @@ document.getElementById('addCard').onclick=()=>{
   cards.push({id:'c'+Date.now(),nombre,corte:null,pago:null,color:COLORS[cards.length%COLORS.length]});
   save();
 };
+/* Botón GUARDAR: sube a la nube AHORA y te dice claro si quedó o no */
+async function guardarNube(){
+  const b=document.getElementById('saveCloud'); if(b){b.classList.add('saving');b.innerHTML='Guardando…';}
+  const ok=await (typeof pushNow==='function'?pushNow():Promise.resolve(false));
+  if(b){b.classList.remove('saving');b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Guardar';}
+  toast(ok?'✓ Guardado en la nube — ya quedó en todos tus dispositivos':'⚠️ NO se pudo guardar en la nube. Revisa tu conexión o vuelve a entrar (login).');
+}
+var _sc=document.getElementById('saveCloud'); if(_sc)_sc.onclick=guardarNube;
 
 render();
 
@@ -601,9 +611,26 @@ localStorage.removeItem=function(k){_rem(k);if(!applyingRemote&&SYNC_RE.test(k))
    - flush al ocultar/cerrar la página + reintento cada 20s + aviso visible si no sincroniza */
 const DIRTY='qsync_dirty';
 function setSyncWarn(bad){let el=document.getElementById('syncwarn');if(bad){if(!el){el=document.createElement('div');el.id='syncwarn';el.style.cssText='position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#7a2e2e;color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;z-index:9999;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5)';el.textContent='⚠️ Cambios sin subir a la nube — toca para reintentar';el.onclick=function(){pushNow();};document.body.appendChild(el);}}else if(el){el.remove();}}
-async function getToken(){try{let s=(await sb.auth.getSession()).data.session;if(s&&s.expires_at&&s.expires_at*1000<Date.now()+60000){const r=await sb.auth.refreshSession();if(r.data&&r.data.session)s=r.data.session;}if(!s){loginEl.classList.add('on');return null;}return s.access_token;}catch(e){return null;}}
-function schedulePush(){_set(DIRTY,'1');clearTimeout(pushT);pushT=setTimeout(pushNow,300);}
-async function pushNow(){clearTimeout(pushT);pushT=null;try{const tok=await getToken();if(!tok){setSyncWarn(true);return false;}const res=await fetch(SB_URL+'/rest/v1/state?id=eq.main',{method:'PATCH',keepalive:true,headers:{apikey:SB_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({blob:snapshot(),updated_at:new Date().toISOString(),updated_by:CLIENT_ID})});if(res.ok){_rem(DIRTY);setSyncWarn(false);return true;}setSyncWarn(true);return false;}catch(e){setSyncWarn(true);return false;}}
+/* getToken robusto: supabase-js a veces se CUELGA en móvil (navigator.locks) → timeout 3s y
+   fallback directo: leer el token de localStorage y refrescarlo vía REST sin la librería. */
+function tokenLS(){const k=Object.keys(localStorage).find(x=>x.startsWith('sb-')&&x.includes('auth-token'));if(!k)return null;try{const raw=JSON.parse(localStorage.getItem(k));return {k,raw,sess:raw.currentSession||raw};}catch(e){return null;}}
+async function getToken(){
+  try{
+    let s=null;
+    try{const g=await Promise.race([sb.auth.getSession(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('to')),3000))]);s=g&&g.data?g.data.session:null;}catch(e){s=null;}
+    if(s&&(!s.expires_at||s.expires_at*1000>Date.now()+60000))return s.access_token;
+    const t=tokenLS();
+    if(!t||!t.sess){loginEl.classList.add('on');return null;}
+    if(t.sess.expires_at&&t.sess.expires_at*1000>Date.now()+60000)return t.sess.access_token;
+    if(t.sess.refresh_token){
+      try{const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:t.sess.refresh_token})}).then(x=>x.json());
+      if(r&&r.access_token){t.raw.access_token=r.access_token;t.raw.refresh_token=r.refresh_token||t.sess.refresh_token;t.raw.expires_at=Math.floor(Date.now()/1000)+(r.expires_in||3600);_set(t.k,JSON.stringify(t.raw));return r.access_token;}}catch(e){}
+    }
+    loginEl.classList.add('on');return null;
+  }catch(e){return null;}
+}
+function schedulePush(){_set(DIRTY,'1');window._justEdited=true;clearTimeout(pushT);pushT=setTimeout(pushNow,300);}
+async function pushNow(){clearTimeout(pushT);pushT=null;try{const tok=await getToken();if(!tok){setSyncWarn(true);return false;}const res=await fetch(SB_URL+'/rest/v1/state?id=eq.main',{method:'PATCH',keepalive:true,headers:{apikey:SB_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({blob:snapshot(),updated_at:new Date().toISOString(),updated_by:CLIENT_ID})});if(res.ok){_rem(DIRTY);setSyncWarn(false);if(window._justEdited){window._justEdited=false;try{toast('✓ Guardado en la nube');}catch(e){}}return true;}setSyncWarn(true);return false;}catch(e){setSyncWarn(true);return false;}}
 async function pull(){if(localStorage.getItem(DIRTY)){await pushNow();return;}try{const {data,error}=await sb.from('state').select('blob').eq('id','main').single();if(error){return;}if(data&&data.blob&&Object.keys(data.blob).length){applySnapshot(data.blob);reloadUI();}else{await pushNow();}}catch(e){}}
 function subscribe(){sb.channel('sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'state',filter:'id=eq.main'},function(p){const nb=p&&p.new&&p.new.blob;const by=p&&p.new&&p.new.updated_by;if(by===CLIENT_ID)return;if(localStorage.getItem(DIRTY)){pushNow();return;}if(nb){applySnapshot(nb);reloadUI();}}).subscribe();}
 function flushSync(){if(localStorage.getItem(DIRTY))pushNow();}
