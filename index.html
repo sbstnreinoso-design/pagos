@@ -589,7 +589,7 @@ const _set=localStorage.setItem.bind(localStorage);
 const _rem=localStorage.removeItem.bind(localStorage);
 localStorage.setItem=function(k,v){_set(k,v);if(!applyingRemote&&SYNC_RE.test(k))schedulePush();};
 localStorage.removeItem=function(k){_rem(k);if(!applyingRemote&&SYNC_RE.test(k))schedulePush();};
-/* FIX 03-jul-2026: antes pushNow ignoraba errores (JWT expirado ⇒ 401 silencioso) y pull() pisaba
+/* FIX 03-jul-2026 (v2): antes pushNow ignoraba errores (JWT expirado ⇒ 401 silencioso) y pull() pisaba
    los cambios locales no subidos ⇒ las confirmaciones de corte/pago se perdían. Ahora:
    - bandera 'qsync_dirty' (no matchea SYNC_RE): marca cambios locales pendientes de subir
    - pushNow: refresca sesión si expiró, usa fetch keepalive (sobrevive al cerrar la app), verifica éxito
