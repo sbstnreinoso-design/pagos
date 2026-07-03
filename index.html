@@ -548,13 +548,17 @@ document.getElementById('importPagos').onclick=()=>toast('Pídemelo en el chat: 
 function renderRemind(){
   const r=document.getElementById('remind');
   const m=ym();
-  // tarjetas con fechas cargadas que aún no confirmas este mes
+  // tarjetas sin confirmar este mes + tarjetas a las que les FALTAN las fechas (p.ej. Davivienda)
   const pend=cards.filter(c=>c.corte&&c.pago&&c.actu!==m);
+  const sinFechas=cards.filter(c=>!c.corte||!c.pago);
   const key='qtarjeta_actu_dismiss_'+m; // se olvida solo al cambiar de mes
   const dismissed=localStorage.getItem(key)==='1';
-  if(pend.length && !dismissed){
-    const names=pend.map(c=>'<b>'+esc(c.nombre)+'</b>').join(', ');
-    document.getElementById('remindTxt').innerHTML=`Aún no confirmas la <b>fecha de corte/pago de ${ymNombre(m)}</b> en: ${names}. Abre el engranaje ⚙ y actualízalas (o toca “Ya la actualicé”) para saber cuál usar.`;
+  if((pend.length||sinFechas.length) && !dismissed){
+    const partes=[];
+    if(pend.length){const names=pend.map(c=>'<b>'+esc(c.nombre)+'</b>').join(', ');partes.push(`Aún no confirmas la <b>fecha de corte/pago de ${ymNombre(m)}</b> en: ${names}.`);}
+    if(sinFechas.length){const names2=sinFechas.map(c=>'<b>'+esc(c.nombre)+'</b>').join(', ');partes.push(`A ${names2} le <b>faltan las fechas de corte/pago</b> — agrégalas para incluirla en la recomendación.`);}
+    partes.push('Abre el engranaje ⚙ y actualízalas (o toca “Ya la actualicé”).');
+    document.getElementById('remindTxt').innerHTML=partes.join(' ');
     r.classList.add('on');
     document.getElementById('remindX').onclick=()=>{localStorage.setItem(key,'1'); r.classList.remove('on');};
   }else{r.classList.remove('on');}
