@@ -458,12 +458,23 @@ function removePago(id){
 }
 
 function loadPaid(){try{return JSON.parse(localStorage.getItem('qpagos_paid'))||{};}catch(e){return {};}}
+/* Ocurrencia vigente de un pago: si el día ya pasó este mes y NO está marcado pagado, sigue siendo la de ESTE mes (VENCIDO), no salta al mes siguiente. */
+function dueFor(p,t,paidMap){
+  if(p.venc) return new Date(p.venc+'T00:00:00');
+  const cur=new Date(t.getFullYear(),t.getMonth(),clampDay(t.getFullYear(),t.getMonth(),p.dia));
+  if(cur<t && (paidMap[p.id]||'')>=cur.toISOString().slice(0,10)) return nextDay(t,p.dia,true);
+  return cur;
+}
 function markPaid(id){
   const p=pagos.find(x=>x.id===id); if(!p) return;
   logPaid(p);
   if(!p.mensual){ removePago(id); renderHist(); toast('Pago realizado. Lo quité de pendientes.'); return; }
+  const t0=today(); const paid=loadPaid();
+  const shown=dueFor(p,t0,paid); // ocurrencia que se está pagando
   if(p.venc){ delete p.venc; localStorage.setItem(PKEY,JSON.stringify(pagos)); } // recibo pagado; el próximo mes usa el día recurrente
-  const due=nextDay(today(),p.dia,false); const paid=loadPaid(); paid[id]=due.toISOString().slice(0,10);
+  const cur=new Date(t0.getFullYear(),t0.getMonth(),clampDay(t0.getFullYear(),t0.getMonth(),p.dia));
+  const eff=shown>cur?shown:cur;
+  paid[id]=eff.toISOString().slice(0,10);
   localStorage.setItem('qpagos_paid',JSON.stringify(paid)); renderPagos(); renderHist(); toast('Marcado como pagado ✓ · vuelve el próximo mes.');
 }
 /* ===== HISTORIAL DE PAGOS (para no pagar 2 veces) ===== */
@@ -498,7 +509,7 @@ document.getElementById('toggleHist').onclick=()=>{const el=document.getElementB
 function renderPagos(){
   const el=document.getElementById('pagos'); if(!el) return;
   const t=today(); const paid=loadPaid();
-  let rows=pagos.map(p=>{const due=p.venc?new Date(p.venc+'T00:00:00'):nextDay(t,p.dia,false); return {p,due,d:daysBetween(t,due),key:due.toISOString().slice(0,10)};});
+  let rows=pagos.map(p=>{const due=dueFor(p,t,paid); return {p,due,d:daysBetween(t,due),key:due.toISOString().slice(0,10)};});
   rows=rows.filter(r=> paid[r.p.id]!==r.key).sort((a,b)=>a.d-b.d);
   const total=rows.reduce((s,r)=> s+(Number(r.p.monto)||0),0);
   const tb=document.getElementById('pagosTotal'); if(tb) tb.textContent = total>0 ? 'Debes $'+total.toLocaleString('es-CO') : '';
