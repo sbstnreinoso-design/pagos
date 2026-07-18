@@ -436,7 +436,9 @@ function render(){
 /* ===== PAGOS PENDIENTES ===== */
 /* Pagos que agrega Claude (de recibos en la carpeta 'pagos' o del correo).
    Cada uno lleva 'ref' (origen + fecha) para no duplicar. Claude edita SOLO este bloque. */
-window.PAGOS_SEED = /*PAGOS_START*/[]/*PAGOS_END*/;
+window.PAGOS_SEED = /*PAGOS_START*/[
+{"id":"mj-abono-202607","concepto":"Abono a María José","monto":1800000,"dia":15,"mensual":false,"venc":"2026-07-15","color":"#14b8a6","ref":"abono de lo que se le debe · agregado 08/07/2026"}
+]/*PAGOS_END*/;
 /* Historial de pagos que Claude registra (ya pagados). Se mezcla con lo que marques en la web. */
 window.HIST_SEED = /*HIST_START*/[]/*HIST_END*/;
 const PKEY="qpagos_v1";
@@ -608,7 +610,22 @@ const SYNC_RE=/^q(tarjeta|pagos)/;
 const CLIENT_ID=Math.random().toString(36).slice(2);
 let applyingRemote=false,pushT=null;
 function snapshot(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(SYNC_RE.test(k))o[k]=localStorage.getItem(k);}return o;}
-function applySnapshot(o){applyingRemote=true;try{const cur=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(SYNC_RE.test(k))cur.push(k);}cur.forEach(k=>_rem(k));Object.keys(o||{}).forEach(k=>{if(SYNC_RE.test(k))_set(k,o[k]);});}finally{applyingRemote=false;}}
+/* FIX 18-jul-2026 (merge de marcas ✓ pagado): antes applySnapshot BORRABA las claves locales y aplicaba
+   el blob remoto tal cual ⇒ si el servidor (u otro dispositivo) no tenía 'qpagos_paid', las marcas de
+   "pagado" se perdían y el pago volvía a aparecer VENCIDO en los demás dispositivos. Ahora 'qpagos_paid'
+   se MERGEA (unión por id, gana la fecha mayor) y si lo local tenía marcas que el server no, se re-suben. */
+function applySnapshot(o){applyingRemote=true;let needPush=false;try{
+o=Object.assign({},o||{});
+try{
+  const lp=JSON.parse(localStorage.getItem('qpagos_paid'))||{};
+  let rp={};try{rp=JSON.parse(o['qpagos_paid'])||{};}catch(e){}
+  const m=Object.assign({},rp);
+  Object.keys(lp).forEach(function(k){if(!m[k]||String(lp[k])>String(m[k])){m[k]=lp[k];needPush=true;}});
+  if(Object.keys(m).length)o['qpagos_paid']=JSON.stringify(m);
+}catch(e){}
+const cur=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(SYNC_RE.test(k))cur.push(k);}cur.forEach(k=>_rem(k));Object.keys(o).forEach(k=>{if(SYNC_RE.test(k))_set(k,o[k]);});
+}finally{applyingRemote=false;}
+if(needPush)schedulePush();}
 function reloadUI(){try{cards=load();pagos=loadPagos();render();renderPagos();renderHist();}catch(e){}}
 const _set=localStorage.setItem.bind(localStorage);
 const _rem=localStorage.removeItem.bind(localStorage);
